@@ -257,7 +257,7 @@ export function createBotSubStore(botId: string, botName: string) {
       async getTrades() {
         try {
           let totalTrades = 0;
-          const pageLength = 0;
+          const pageLength = 50000;
           const fetchTrades = async (limit: number, offset: number) => {
             return api.get<TradeResponse>('/trades', {
               params: { limit, offset },
