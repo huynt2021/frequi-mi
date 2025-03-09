@@ -296,8 +296,9 @@ export function createBotSubStore(botId: string, botName: string) {
             // Pagination necessary
             // Don't use Promise.all - this would fire all requests at once, which can
             // cause problems for big sqlite databases
+            let offset = pageLength;
             do {
-              res = await fetchTrades(pageLength, trades.length);
+              res = await fetchTrades(pageLength, offset);
 
               result = res.data;
               trades = trades.concat(result.trades);
@@ -308,6 +309,8 @@ export function createBotSubStore(botId: string, botName: string) {
                 tradeMap.set(trade.trade_id, trade);
               });
               trades = Array.from(tradeMap.values());
+
+              offset = trades.length;
             } while (trades.length < totalTrades);
           }
           
