@@ -263,21 +263,24 @@ export function createBotSubStore(botId: string, botName: string) {
               params: { limit, offset },
             });
           };
-          const res = await fetchTrades(pageLength, 0);
-          const result: TradeResponse = res.data;
+          
+          // Initial fetch
+          let res = await fetchTrades(pageLength, 0);
+          let result: TradeResponse = res.data;
           let { trades } = result;
+          totalTrades = result.total_trades;
+
+          // Check if pagination is necessary
           if (Array.isArray(trades)) {
-            if (trades.length !== result.total_trades) {
+            if (trades.length < totalTrades) {
               // Pagination necessary
               // Don't use Promise.all - this would fire all requests at once, which can
               // cause problems for big sqlite databases
-              do {
-                const res = await fetchTrades(pageLength, trades.length);
-
-                const result: TradeResponse = res.data;
+              for (let offset = trades.length; offset < totalTrades; offset += pageLength) {
+                res = await fetchTrades(pageLength, offset);
+                result = res.data;
                 trades = trades.concat(result.trades);
-                totalTrades = res.data.total_trades;
-              } while (trades.length !== totalTrades);
+              }
             }
             const tradesCount = trades.length;
             // Add botId to all trades
