@@ -279,7 +279,13 @@ export function createBotSubStore(botId: string, botName: string) {
               for (let offset = trades.length; offset < totalTrades; offset += pageLength) {
                 res = await fetchTrades(pageLength, offset);
                 result = res.data;
-                trades = trades.concat(result.trades);
+                
+                // Ensure not to add duplicate trades
+                if (trades.length + result.trades.length > totalTrades) {
+                  trades = trades.concat(result.trades.slice(0, totalTrades - trades.length));
+                } else {
+                  trades = trades.concat(result.trades);
+                }
               }
             }
             const tradesCount = trades.length;
