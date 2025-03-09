@@ -271,39 +271,38 @@ export function createBotSubStore(botId: string, botName: string) {
           totalTrades = result.total_trades;
 
           // Check if pagination is necessary
-          if (Array.isArray(trades)) {
-            if (trades.length < totalTrades) {
-              // Pagination necessary
-              // Don't use Promise.all - this would fire all requests at once, which can
-              // cause problems for big sqlite databases
-              for (let offset = trades.length; offset < totalTrades; offset += pageLength) {
-                res = await fetchTrades(pageLength, offset);
-                result = res.data;
-                trades = trades.concat(result.trades);
+          if (trades.length < totalTrades) {
+            // Pagination necessary
+            // Don't use Promise.all - this would fire all requests at once, which can
+            // cause problems for big sqlite databases
+            for (let offset = pageLength; offset <= totalTrades; offset += pageLength) {
+              res = await fetchTrades(pageLength, offset);
+              result = res.data;
+              trades = trades.concat(result.trades);
 
-                // // remove duplicates from trades by trade_id
-                // trades = trades.filter((t, index) => trades.findIndex((t2) => t2.trade_id === t.trade_id) === index);
-              }
-
-              // Remove duplicate trades after all loops have been completed
-              const tradeMap = new Map();
-              trades.forEach((trade) => {
-                tradeMap.set(trade.trade_id, trade);
-              });
-              trades = Array.from(tradeMap.values());
+              // // remove duplicates from trades by trade_id
+              // trades = trades.filter((t, index) => trades.findIndex((t2) => t2.trade_id === t.trade_id) === index);
             }
-            
-            const tradesCount = trades.length;
-            // Add botId to all trades
-            trades = trades.map((t) => ({
-              ...t,
-              botId,
-              botName,
-              botTradeId: `${botId}__${t.trade_id}`,
-            }));
-            this.trades = trades;
-            this.tradeCount = tradesCount;
+
+            // Remove duplicate trades after all loops have been completed
+            const tradeMap = new Map();
+            trades.forEach((trade) => {
+              tradeMap.set(trade.trade_id, trade);
+            });
+            trades = Array.from(tradeMap.values());
           }
+          
+          const tradesCount = trades.length;
+          // Add botId to all trades
+          trades = trades.map((t) => ({
+            ...t,
+            botId,
+            botName,
+            botTradeId: `${botId}__${t.trade_id}`,
+          }));
+          this.trades = trades;
+          this.tradeCount = tradesCount;
+
           return Promise.resolve();
         } catch (error) {
           if (axios.isAxiosError(error)) {
