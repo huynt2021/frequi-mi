@@ -279,15 +279,20 @@ export function createBotSubStore(botId: string, botName: string) {
               for (let offset = trades.length; offset < totalTrades; offset += pageLength) {
                 res = await fetchTrades(pageLength, offset);
                 result = res.data;
-                
-                // Ensure not to add duplicate trades
-                if (trades.length + result.trades.length > totalTrades) {
-                  trades = trades.concat(result.trades.slice(0, totalTrades - trades.length));
-                } else {
-                  trades = trades.concat(result.trades);
-                }
+                trades = trades.concat(result.trades);
+
+                // // remove duplicates from trades by trade_id
+                // trades = trades.filter((t, index) => trades.findIndex((t2) => t2.trade_id === t.trade_id) === index);
               }
+
+              // Remove duplicate trades after all loops have been completed
+              const tradeMap = new Map();
+              trades.forEach((trade) => {
+                tradeMap.set(trade.trade_id, trade);
+              });
+              trades = Array.from(tradeMap.values());
             }
+            
             const tradesCount = trades.length;
             // Add botId to all trades
             trades = trades.map((t) => ({
