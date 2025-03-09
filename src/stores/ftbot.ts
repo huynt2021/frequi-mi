@@ -270,26 +270,45 @@ export function createBotSubStore(botId: string, botName: string) {
           let { trades } = result;
           totalTrades = result.total_trades;
 
+          // if (trades.length < totalTrades) {
+          //   // Pagination necessary
+          //   // Don't use Promise.all - this would fire all requests at once, which can
+          //   // cause problems for big sqlite databases
+          //   for (let offset = trades.length; offset <= totalTrades; offset += pageLength) {
+          //     res = await fetchTrades(pageLength, offset);
+          //     result = res.data;
+          //     trades = trades.concat(result.trades);
+              
+          //     // // remove duplicates from trades by trade_id
+          //     // trades = trades.filter((t, index) => trades.findIndex((t2) => t2.trade_id === t.trade_id) === index);
+          //   }
+            
+          //   // Remove duplicate trades after all loops have been completed
+          //   const tradeMap = new Map();
+          //   trades.forEach((trade) => {
+          //     tradeMap.set(trade.trade_id, trade);
+          //   });
+          //   trades = Array.from(tradeMap.values());
+          // }
+          
           // Check if pagination is necessary
           if (trades.length < totalTrades) {
             // Pagination necessary
             // Don't use Promise.all - this would fire all requests at once, which can
             // cause problems for big sqlite databases
-            for (let offset = pageLength; offset <= totalTrades; offset += pageLength) {
-              res = await fetchTrades(pageLength, offset);
+            do {
+              res = await fetchTrades(pageLength, trades.length);
+
               result = res.data;
               trades = trades.concat(result.trades);
-
-              // // remove duplicates from trades by trade_id
-              // trades = trades.filter((t, index) => trades.findIndex((t2) => t2.trade_id === t.trade_id) === index);
-            }
-
-            // Remove duplicate trades after all loops have been completed
-            const tradeMap = new Map();
-            trades.forEach((trade) => {
-              tradeMap.set(trade.trade_id, trade);
-            });
-            trades = Array.from(tradeMap.values());
+              
+              // Remove duplicate trades after all loops have been completed
+              let tradeMap = new Map();
+              trades.forEach((trade) => {
+                tradeMap.set(trade.trade_id, trade);
+              });
+              trades = Array.from(tradeMap.values());
+            } while (trades.length < totalTrades);
           }
           
           const tradesCount = trades.length;
